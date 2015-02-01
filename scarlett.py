@@ -510,3 +510,10 @@ class ScarlettDevice(object):
             0x0200 + self.config["signal_out"][bus],
             0x0a00, _postroute_gain_to_hex(gain)
         )
+
+    # ____ peak meters ________________________________________________________
+
+    def get_peak_meters(self):
+        """Get all peak meter levels."""
+        # TODO: implement
+        pass
