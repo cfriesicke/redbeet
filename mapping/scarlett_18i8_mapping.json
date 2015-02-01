@@ -1,0 +1,38 @@
+{
+    "mixer_src" : {
+        "OFF":255,
+        "DAW1":0, "DAW2":1, "DAW3":2, "DAW4":3, "DAW5":4, "DAW6":5, "DAW7":6, "DAW8":7,
+        "ANALOG1":8, "ANALOG2":9, "ANALOG3":10, "ANALOG4":11, "ANALOG5":12, "ANALOG6":13, "ANALOG7":14, "ANALOG8":15,
+        "SPDIF1":16, "SPDIF2":17,
+        "ADAT1":18, "ADAT2":19, "ADAT3":20, "ADAT4":21, "ADAT5":22, "ADAT6":23, "ADAT7":24, "ADAT8":25
+    },
+    "mixer_in" : {
+        "CH_01":0, "CH_02":1, "CH_03":2, "CH_04":3, "CH_05":4, "CH_06":5, "CH_07":6, "CH_08":7, "CH_09":8, "CH_10":9, "CH_11":10, "CH_12":11, "CH_13":12, "CH_14":13, "CH_15":14, "CH_16":15, "CH_17":16, "CH_18":17
+    },
+    "mixer_out" : {
+        "MIX1":0, "MIX2":1, "MIX3":2, "MIX4":3, "MIX5":4, "MIX6":5, "MIX7":6, "MIX8":7
+    },
+    "router_src" : {
+        "OFF":255,
+        "DAW1":0, "DAW2":1, "DAW3":2, "DAW4":3, "DAW5":4, "DAW6":5, "DAW7":6, "DAW8":7,
+        "ANALOG1":8, "ANALOG2":9, "ANALOG3":10, "ANALOG4":11, "ANALOG5":12, "ANALOG6":13, "ANALOG7":14, "ANALOG8":15,
+        "SPDIF1":16, "SPDIF2":17,
+        "ADAT1":18, "ADAT2":19, "ADAT3":20, "ADAT4":21, "ADAT5":22, "ADAT6":23, "ADAT7":24, "ADAT8":25,
+        "MIX1":26, "MIX2":27, "MIX3":28, "MIX4":29, "MIX5":30, "MIX6":31, "MIX7":32, "MIX8":33
+    },
+    "router_dest" : {
+        "MONITOR_L":0, "MONITOR_R":1, "PHONES1_L":2, "PHONES1_R":3, "PHONES2_L":4, "PHONES2_R":5, "SPDIF_L":6, "SPDIF_R":7
+    },
+    "signal_out" : {
+        "MASTER":0, "MONITOR_L":1, "MONITOR_R":2, "PHONES1_L":3, "PHONES1_R":4, "PHONES2_L":5, "PHONES2_R":6
+    },
+    "imp_switch" : {
+        "ANALOG1":1, "ANALOG2":2
+    },
+    "pad_switch" : {
+        "ANALOG1":1, "ANALOG2":2, "ANALOG3":3, "ANALOG4":4
+    },
+    "clk_switch" : {
+        "INTERNAL":1, "SPDIF":2, "ADAT":3
+    }
+}
