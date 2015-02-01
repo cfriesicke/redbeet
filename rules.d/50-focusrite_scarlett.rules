@@ -1,0 +1,16 @@
+# Make Focusrite Scarlett devices accessible by members of the "audio" group
+
+# 2i2
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="1235", ATTRS{idProduct}=="8006", GROUP="audio", MODE="0666"
+# 2i4
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="1235", ATTRS{idProduct}=="800a", GROUP="audio", MODE="0666"
+# 6i6
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="1235", ATTRS{idProduct}=="8012", GROUP="audio", MODE="0666"
+# 8i6
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="1235", ATTRS{idProduct}=="8002", GROUP="audio", MODE="0666"
+# 18i6
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="1235", ATTRS{idProduct}=="8000", GROUP="audio", MODE="0666"
+# 18i8
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="1235", ATTRS{idProduct}=="8014", GROUP="audio", MODE="0666"
+# 18i20
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="1235", ATTRS{idProduct}=="800c", GROUP="audio", MODE="0666"
