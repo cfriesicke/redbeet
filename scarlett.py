@@ -96,7 +96,8 @@ def get_device_list():
     """Get list of usb device objects of all connected Scarlett devices."""
     device_list = list()
     for id_prod in [ID_2I2, ID_2I4, ID_6I6, ID_8I6, ID_18I6, ID_18I8, ID_18I20]:
-        for device in usb.core.find(find_all=True, idVendor=0x1235, idProduct=id_prod):
+        for device in usb.core.find(find_all=True, idVendor=0x1235,
+                                    idProduct=id_prod):
             device_list.append(device)
     return device_list
 
@@ -104,7 +105,7 @@ def get_device_list():
 # _____________________________________________________________________________
 
 
-class Device:
+class Device(object):
     # constructor
     # @param device -- usb device object
     #
@@ -168,12 +169,16 @@ class Device:
 
 
     def get_name(self):
-        try:
-            mfr = usb.util.get_string(self.device, self.device.iManufacturer)
-            prod = usb.util.get_string(self.device, self.device.iProduct)
-            ser = usb.util.get_string(self.device, self.device.iSerialNumber)
-        except:
-            print "USB error: get_string failed."
+        """Get human-readable string of the devie.
+
+        Returns:
+            A string consisting of manufacturer name (Focusrite), product name,
+            and the serial number. Because of the serial number, the returned
+            string can be used as a unique identifier of the device.
+        """
+        mfr = usb.util.get_string(self.device, self.device.iManufacturer)
+        prod = usb.util.get_string(self.device, self.device.iProduct)
+        ser = usb.util.get_string(self.device, self.device.iSerialNumber)
         name = "%s %s (S/N: %s)" % (mfr, prod, ser)
         return name
 
@@ -215,18 +220,20 @@ class Device:
     #      0x03  0x0003  0x3c00   Get peak meters of daw channels
     #                             (len = 2 bytes x number of daw channels)
 
-    def usb_ctrl_send(self, bmRequest, wValue, wIndex, data):
+    def usb_ctrl_send(self, bm_request, w_value, w_index, data):
         """Issue a send-type (host-to-device) USB control transfer."""
         try:
-            assert self.device.ctrl_transfer(0x21, bmRequest, wValue, wIndex, data) == len(data)
+            assert self.device.ctrl_transfer(0x21, bm_request, w_value, w_index,
+                                             data) == len(data)
         except:
             raise ValueError('USB control transfer failed')
 
-    def usb_ctrl_recv(self, bmRequest, wValue, wIndex, data):
+    def usb_ctrl_recv(self, bm_request, w_value, w_index, data):
         "Issue a receive-type (device-to-host) USB control transfer."""
         try:
-            rv = self.device.ctrl_transfer(0xa1, bmRequest, wValue, wIndex, data)
-            return rv
+            received_data = self.device.ctrl_transfer(0xa1, bm_request, w_value,
+                                                      w_index, data)
+            return received_data
         except:
             raise ValueError('USB control transfer failed')
 
@@ -282,14 +289,28 @@ class Device:
         self.usb_ctrl_send(0x03, 0x005a, 0x3c00, [0xa5])
 
 
-    # ---- mixer stage ---------------------------------------------------------
+    # ____ mixer stage ________________________________________________________
 
-    # mixer stage: connect signal source to input of matrix mixer
     def set_mixer_source(self, src, mix_in):
+        """Connect a signal source to a matrix mixer input.
+
+        Args:
+            src (string): Name of the source that is connected to the matrix
+                mixer input; must be defined in the device dictionary
+                self.config["mixer_src"]. The source can be one of the hardware
+                inputs of the device or one of the DAW channels.
+            mix_in (string): Name of the matrix mixer input; must be defined in
+                the device dictionary self.config["mixer_in"].
+
+        Raises:
+            KeyError: An error occurred when trying to access invalid signal
+                sources or matrix mixer inputs.
+
+        """
         if src not in self.config["mixer_src"]:
             raise KeyError('Invalid signal source')
         if mix_in not in self.config["mixer_in"]:
-            raise ValueError('Invalid matrix mixer input')
+            raise KeyError('Invalid matrix mixer input')
         self.usb_ctrl_send(
             0x01,
             0x0600 + self.config["mixer_in"][mix_in],
@@ -297,16 +318,28 @@ class Device:
             [self.config["mixer_src"][src], 0x00]
         )
 
-    # mixer stage: set the gain of a matrix mixer element
-    # @param mix_in -- number of matrix mixer input (0 .. mixer_input_num-1)
-    # @param mix_out -- key of the dictionary mixer_output
-    # @param gain -- element gain in dB (-infty .. +6 dB, default: 0 dB)
     def set_mixer_gain(self, mix_in, mix_out, gain=0):
+        """Set the gain of a matrix mixer element.
+
+        Args:
+            mix_in (string): Name of the matrix mixer input; must be defined in
+                the device dictionary self.config["mixer_in"].
+            mix_out (string): Name of the matrix mixer output; must be defined
+                in the device dictionary self.config["mixer_in"].
+            gain (float): Gain of the matrix mixer element in dB. Values will
+                be truncated to the interval [-128 .. +6]. The default value
+                is 0 dB.
+        Raises:
+            KeyError: An error occurred when trying to access invalid matrix
+                mixer input or output.
+
+        """
         if mix_in not in self.config["mixer_in"]:
-            raise ValueError('Invalid matrix mixer input')
+            raise KeyError('Invalid matrix mixer input')
         if mix_out not in self.config["mixer_out"]:
             raise KeyError('Invalid mixer output')
-        element_index = (self.config["mixer_in"][mix_in] << 3) + (self.config["mixer_out"][mix_out] & 0x07)
+        element_index = ((self.config["mixer_in"][mix_in] << 3) +
+                         (self.config["mixer_out"][mix_out] & 0x07))
         self.usb_ctrl_send(
             0x01,
             0x0100 + element_index,
@@ -377,8 +410,8 @@ class Device:
         Args:
             bus (string): Name of the output bus; must be defined in the device
                 dictionary self.config["signal_out"].
-            gain (float): Gain of the ouput bus in dB. Values are truncated to
-                the interval [-128 .. 0]. Since the gain is negative or zero,
+            gain (float): Gain of the ouput bus in dB. Values will be truncated
+                to the interval [-128 .. 0]. Since the gain is negative or zero,
                 the bus is actually attenuated, not amplified.
 
         Raises:
