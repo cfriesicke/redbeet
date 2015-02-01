@@ -1,23 +1,27 @@
-# RedBeet: A console for the Focusrite Scarlett 6i6, 8i6, 18i6, 18i8, and 18i20.
-#
-# Copyright (C) 2015 Christian Friesicke <christian@friesicke.me>
-#
-# Based on proof-of-concept code [https://github.com/x42/scarlettmixer]
-# Copyright (C) 2013 Robin Gareus <robin@gareus.org>
-#
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, see <http://www.gnu.org/licenses/>.
+"""A module to control USB devices of the Focusrite Scarlett series.
+
+This module contains the ScarlettDevice class with which Focusrite Scarlett
+devices can be controlled. Some further constants and helper fuctions are
+provided outside of the class within the module.
+
+Copyright (C) 2015 Christian Friesicke <christian@friesicke.me>
+
+Based on proof-of-concept code [https://github.com/x42/scarlettmixer]
+Copyright (C) 2013 Robin Gareus <robin@gareus.org>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, see <http://www.gnu.org/licenses/>.
+"""
 
 import json
 import math
@@ -25,7 +29,9 @@ import struct
 import usb.core
 import usb.util
 
+
 # constants for auto-detection / identifying interfaces by usb product id
+# TODO: delete 2i2 and 2i4?
 ID_AUTO = 0
 ID_2I2 = 0x8006
 ID_2I4 = 0x800a
@@ -35,15 +41,18 @@ ID_18I6 = 0x8000
 ID_18I8 = 0x8014
 ID_18I20 = 0x800c
 
+
 # constants for set_impedance()
 IMPEDANCE_LINE = 0x00
 IMPEDANCE_INST = 0x01
+
 
 # constants for set_pad()
 PAD_OFF = 0x00
 PAD_ON = 0x01
 
-# constants for postroute_mute()
+
+# constants for set_postroute_mute()
 UNMUTE = 0x00
 MUTE = 0x01
 
@@ -93,25 +102,67 @@ def _postroute_gain_to_hex(gain):
 
 
 def get_device_list():
-    """Get list of usb device objects of all connected Scarlett devices."""
+    """Get a list of all connected Scarlett devices.
+
+    Returns:
+        List of pyusb device objects of all connected Scarlett devices.
+        TODO: delete 2i2 and 2i4?
+    """
     device_list = list()
-    for id_prod in [ID_2I2, ID_2I4, ID_6I6, ID_8I6, ID_18I6, ID_18I8, ID_18I20]:
+    for id_prod in [ID_2I2, ID_2I4, ID_6I6, ID_8I6, ID_18I6, ID_18I8,
+                    ID_18I20]:
         for device in usb.core.find(find_all=True, idVendor=0x1235,
                                     idProduct=id_prod):
             device_list.append(device)
     return device_list
 
 
+def get_device_name(device):
+    """Get a human-readable and unique name of a Scarlett device.
+
+    Args:
+        device (usb.core.Device): usb object associated with Scarlett device.
+
+    Returns:
+        A string consisting of manufacturer name (Focusrite), product name,
+        and the serial number of the device. Because of the serial number, the
+        returned string can be used as a unique identifier of the device.
+    """
+    mfr = usb.util.get_string(device, device.iManufacturer)
+    prod = usb.util.get_string(device, device.iProduct)
+    ser = usb.util.get_string(device, device.iSerialNumber)
+    name = "%s %s (S/N: %s)" % (mfr, prod, ser)
+    return name
+
 # _____________________________________________________________________________
 
 
-class Device(object):
-    # constructor
-    # @param device -- usb device object
-    #
-    # in the future add auto-detection, together with filtering multiple devices
-    # by productid or serial number.
+class ScarlettDevice(object):
+    """A class to control USB devices of the Focusrite Scarlett series.
+
+    The class can control the hardware mixer, router, and other features such
+    as setting input impedance, input attenuation, clock source, and master
+    volume/mute. Furthermore, peak meter levels can be read from individual
+    channels.
+
+    """
+
     def __init__(self, device=None):
+        """Construct a new ScarlettDevice instance.
+
+        Args:
+            device (usb.core.Device): usb object to be controlled by the
+                instance. The default value is None, which triggers the auto-
+                detection. Auto-detection gathers a list of all valid Scarlett
+                devices attached to USB and picks the first item of the list.
+
+        Raises:
+            ValueError: An error occured when auto-detect does not find any
+                valid Scarlett device attached to USB.
+
+        TODO: add auto-detection together with filtering multiple present
+            devices by productid or serial number.
+        """
         self.device = device
 
         # auto-detect (default: first found device)
@@ -138,20 +189,19 @@ class Device(object):
         # dictionary with pointers to json files that contain device-specific
         # configuration data
         # TODO: later files should be in /usr/share/package-foo/mapping/
-
-        # TODO: delete 2i2, 2i4, or create correct json files
+        # TODO: delete 2i2, 2i4?
+        # TODO: create 18i20 json file
         json_file_by_id = {
-            ID_2I2   : "mapping/scarlett_2i2_mapping_TODO.json",
-            ID_2I4   : "mapping/scarlett_2i4_mapping_TODO.json",
-            ID_18I6  : "mapping/scarlett_18i6_mapping.json",
-            ID_8I6   : "mapping/scarlett_8i6_mapping.json",
-            ID_18I20 : "mapping/scarlett_18i20_mapping_TODO.json",
-            ID_6I6   : "mapping/scarlett_6i6_mapping.json",
-            ID_18I8  : "mapping/scarlett_18i8_mapping.json"
+            ID_2I2:   "mapping/scarlett_2i2_mapping_TODO.json",
+            ID_2I4:   "mapping/scarlett_2i4_mapping_TODO.json",
+            ID_18I6:  "mapping/scarlett_18i6_mapping.json",
+            ID_8I6:   "mapping/scarlett_8i6_mapping.json",
+            ID_18I20: "mapping/scarlett_18i20_mapping_TODO.json",
+            ID_6I6:   "mapping/scarlett_6i6_mapping.json",
+            ID_18I8:  "mapping/scarlett_18i8_mapping.json"
         }
         # load json into dictionary with device configuration
         self.config = json.load(open(json_file_by_id[self.device.idProduct]))
-
 
     def __del__(self):
         # self.device might be None, e.g. when auto-detect failed
@@ -160,27 +210,17 @@ class Device(object):
             usb.util.release_interface(self.device, 0)
 
             # finally, re-attach the kernel driver to the (previously attached)
-            # interfaces. It is weird, but by attaching interface 0, interface 1
-            # and 2 are attached automatically. The code below handles this by
-            # calling is_kernel_driver_active() for every interface.
+            # interfaces. It is weird, but by attaching interface 0,
+            # interfaces 1 and 2 are attached automatically. The code below
+            # handles this by calling is_kernel_driver_active() for every
+            # interface.
             for interface in self.previously_attached:
                 if not self.device.is_kernel_driver_active(interface):
                     self.device.attach_kernel_driver(interface)
 
-
     def get_name(self):
-        """Get human-readable string of the devie.
-
-        Returns:
-            A string consisting of manufacturer name (Focusrite), product name,
-            and the serial number. Because of the serial number, the returned
-            string can be used as a unique identifier of the device.
-        """
-        mfr = usb.util.get_string(self.device, self.device.iManufacturer)
-        prod = usb.util.get_string(self.device, self.device.iProduct)
-        ser = usb.util.get_string(self.device, self.device.iSerialNumber)
-        name = "%s %s (S/N: %s)" % (mfr, prod, ser)
-        return name
+        """Get the name and serial number of the Scarlett device."""
+        get_device_name(self.device)
 
     # -------------------------------------------------------------------------
     # USB control transfers
@@ -200,14 +240,14 @@ class Device(object):
     #      0x01  0x0a00  0x0200+bus      (2bytes)  Set output master volume
     #      0x01  0x2800  0x0100          (1byte)   Set clock source
     #      0x01  0x2900  0x0100          (4bytes)  Set sampling rate in Hz
-    #      0x01  0x3200  0x0600+channel  (2bytes)  Assign source (=data) to
-    #                                              mixer input channel
-    #      0x01  0x3300  0x0000+bus      (2bytes)  Route mix (=data) to
-    #                                              destination bus
-    #      0x01  0x3400  ??                        Clear mixer -- force assignm.
-    #                                              used during factory reset (?)
-    #      0x01  0x3c00  0x0000+element  (2bytes)  Set matrix mixer gain (=data)
-    #                                              for element
+    #      0x01  0x3200  0x0600+channel  (2bytes)  Assign source to mixer input
+    #                                              channel
+    #      0x01  0x3300  0x0000+bus      (2bytes)  Route mix to destination
+    #                                              bus
+    #      0x01  0x3400  ??                        Clear mixer -- force assign.
+    #                                              used during factory reset ?
+    #      0x01  0x3c00  0x0000+element  (2bytes)  Set matrix mixer gain for
+    #                                              element
     #      0x03  0x3c00  0x005a          0xa5      Save settings to hardware
     #
     # Overview of all "receive"-type requests
@@ -223,24 +263,41 @@ class Device(object):
     def usb_ctrl_send(self, bm_request, w_value, w_index, data):
         """Issue a send-type (host-to-device) USB control transfer."""
         try:
-            assert self.device.ctrl_transfer(0x21, bm_request, w_value, w_index,
-                                             data) == len(data)
+            assert self.device.ctrl_transfer(0x21, bm_request, w_value,
+                                             w_index, data) == len(data)
         except:
             raise ValueError('USB control transfer failed')
 
     def usb_ctrl_recv(self, bm_request, w_value, w_index, data):
         "Issue a receive-type (device-to-host) USB control transfer."""
         try:
-            received_data = self.device.ctrl_transfer(0xa1, bm_request, w_value,
-                                                      w_index, data)
+            received_data = self.device.ctrl_transfer(0xa1, bm_request,
+                                                      w_value, w_index, data)
             return received_data
         except:
             raise ValueError('USB control transfer failed')
 
-    # ---- misc control--------------------------------------------------------
+    # ____ misc control _______________________________________________________
 
-    # switch the impedance between line/mic and instrument
     def set_impedance(self, channel, impedance):
+        """Switch the impedance level of an analog hardware input.
+
+        The impedance can be switched between "line/mic" and "instrument". The
+        choice of line or mic further depends on the connector type that is
+        plugged into the input (TRS = line, XLR = mic).
+
+        Args:
+            channel (string): Name of the analog input for which the impedance
+                level is to be set; must be defined in the device dictionary
+                self.config["imp_switch"].
+            impedance (int): Enum-like int value defined in the scarlett
+                module; must be IMPEDANCE_LINE or IMPEDANCE_INST.
+
+        Raises:
+            KeyError: An error occurred when trying to set the impedance of an
+                invalid hardware input.
+
+        """
         if channel not in self.config["imp_switch"]:
             raise KeyError('Invalid input source for impedance switch')
         self.usb_ctrl_send(
@@ -251,6 +308,22 @@ class Device(object):
         )
 
     def set_pad(self, channel, pad_onoff):
+        """Set pad (attenuation) of analog hardware inputs.
+
+        The attenuation level itself cannot be set with this command. It is a
+        fixed level reduction typically used when connecting sources that are
+        too "hot" and that would otherwise distort the input pre-amp.
+
+        Args:
+            channel (string): Name of the analog input to attenuate; must be
+                defined in the device dictionary self.config["pad_switch"].
+            pad_onoff (int): Enum-like int value defined in the scarlett
+                module; must be PAD_ON or PAD_OFF.
+
+        Raises:
+            KeyError: An error occured when trying to set the pad of an invalid
+                hardware input.
+        """
         if channel not in self.config["pad_switch"]:
             raise KeyError('Invalid input source for pad switch')
         self.usb_ctrl_send(
@@ -260,8 +333,18 @@ class Device(object):
             [pad_onoff, 0x00]
         )
 
-    # set the clock source
     def set_clock_source(self, src):
+        """Set the hardware clock source.
+
+        Args:
+            src (string): Name of the hardware clock source; must be defined in
+                the device dictionary self.config["clk_switch"].
+
+        Raises:
+            KeyError: An error occured when trying to set an invalid hardware
+                clock source.
+
+        """
         if src not in self.config["clk_switch"]:
             raise KeyError('Invalid clock source')
         self.usb_ctrl_send(
@@ -271,23 +354,26 @@ class Device(object):
             [self.config["clk_switch"][src]]
         )
 
-    # set sampling rate
     def set_sampling_rate(self, rate):
-        # lazy little endian conversion by means of dictionary
-        rate_dict = {
-            44100 : [0x44, 0xac, 0x00, 0x00],
-            48000 : [0x80, 0xbb, 0x00, 0x00],
-            88200 : [0x88, 0x58, 0x01, 0x00],
-            96000 : [0x00, 0x77, 0x01, 0x00]
-        }
-        if rate not in rate_dict:
-            raise KeyError('Invalid sampling rate')
-        self.usb_ctrl_send(0x01, 0x0100, 0x2900, rate_dict[rate])
+        """Set sampling rate.
 
-    # save current config to be restored after power-cycles
+        Args:
+            rate (int): sampling rate in Hz. The only allowed values are
+            44100, 48000, 8820, and 96000.
+
+        Raises:
+            ValueError: An error occurred when trying to set an invalid rate.
+
+        """
+        if rate not in [44100, 48000, 88200, 96000]:
+            raise ValueError('Invalid sampling rate')
+        # pack rate in int, unpack as 4-byte tuple, then convert to list.
+        rate_seq = list(struct.unpack('4b', struct.pack('i', rate)))
+        self.usb_ctrl_send(0x01, 0x0100, 0x2900, rate_seq)
+
     def save_settings_to_hardware(self):
+        """Save configuration to device; restored after power-cycles."""
         self.usb_ctrl_send(0x03, 0x005a, 0x3c00, [0xa5])
-
 
     # ____ mixer stage ________________________________________________________
 
@@ -347,7 +433,6 @@ class Device(object):
             _mixer_gain_to_hex(gain)
         )
 
-
     # ____ routing stage ______________________________________________________
 
     def route_mix(self, src, dest):
@@ -377,7 +462,6 @@ class Device(object):
             0x3300,
             [self.config["router_src"][src], 0x00]
         )
-
 
     # ____ post-routing stage _________________________________________________
 
@@ -411,7 +495,7 @@ class Device(object):
             bus (string): Name of the output bus; must be defined in the device
                 dictionary self.config["signal_out"].
             gain (float): Gain of the ouput bus in dB. Values will be truncated
-                to the interval [-128 .. 0]. Since the gain is negative or zero,
+                to the interval [-128 .. 0]. Since the gain is not positive,
                 the bus is actually attenuated, not amplified.
 
         Raises:
