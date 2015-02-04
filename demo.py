@@ -105,6 +105,14 @@ def main():
     # route mono mix 4 to right HP02
     sdev.route_mix("MIX4", "PHONES2_R")
 
+    # get and print all peak meter levels
+    meters = sdev.get_peak_meters()
+    print "Hardware input meters:"
+    for meter in meters['input']:
+        print "  %g dB" % meter
+    print "DAW meters: %s\n" % meters['daw']
+    print "Mix meters: %s\n" % meters['mix']
+
     # save permanently
     sdev.save_settings_to_hardware()
 
