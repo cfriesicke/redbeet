@@ -97,7 +97,7 @@ def _postroute_gain_to_hex(gain):
     # A 1dB step in gain equals a step of 256 in the integer representation.
     # Pack the resulting integer into a 16-bit signed struct and unpack as a
     # tuple of two signed bytes. The tuple order is little endian.
-    byte_seq = struct.unpack('2b', struct.pack('1h', round(gain*256.0)))
+    byte_seq = list(struct.unpack('2b', struct.pack('1h', round(gain*256.0))))
     return byte_seq
 
 
