@@ -101,6 +101,25 @@ def _postroute_gain_to_hex(gain):
     return byte_seq
 
 
+def _twobyte_to_db(byte_lo, byte_hi):
+    """Calculate peak level in dB from a two-byte sequence.
+
+    Args:
+        byte_lo, byte_hi (int): lsb and msb of the two byte sequence.
+
+    Returns:
+        Peak level in dB; range is [-inf: 0].
+
+    """
+    # pack two little endian bytes into struct; unpack as 16-bit int.
+    two_int8_bytes = struct.pack('2B', byte_lo&0xff, byte_hi&0xff)
+    int16_value = list(struct.unpack('1H', two_int8_bytes))[0]
+    if int16_value == 0:
+        return float('-inf')  # otherwise log10 would raise an exception
+    else:
+        return 20*math.log10(int16_value/65536.0)
+
+
 def get_device_list():
     """Get a list of all connected Scarlett devices.
 
@@ -514,6 +533,32 @@ class ScarlettDevice(object):
     # ____ peak meters ________________________________________________________
 
     def get_peak_meters(self):
-        """Get all peak meter levels."""
-        # TODO: implement
-        pass
+        """Get all peak meter levels.
+
+        Returns:
+            Dictionary of peak meter levels in dB for all {'input', 'daw',
+            and 'mix'} channels.
+
+        """
+
+        # TODO: this only holds for the 18i8 -- should be put in self.config[]
+        num_inp_ch = 18
+        num_daw_ch = 8
+        num_mix_ch = 8
+        inp_data = self.usb_ctrl_recv(0x03, 0x0000, 0x3c00, 2*num_inp_ch)
+        daw_data = self.usb_ctrl_recv(0x03, 0x0003, 0x3c00, 2*num_daw_ch)
+        mix_data = self.usb_ctrl_recv(0x03, 0x0001, 0x3c00, 2*num_mix_ch)
+
+        inp_db = list()
+        daw_db = list()
+        mix_db = list()
+        for channel in range(num_inp_ch):
+            inp_db.append(_twobyte_to_db(inp_data[2*channel],
+                                         inp_data[2*channel+1]))
+        for channel in range(num_daw_ch):
+            daw_db.append(_twobyte_to_db(daw_data[2*channel],
+                                         daw_data[2*channel+1]))
+        for channel in range(num_mix_ch):
+            mix_db.append(_twobyte_to_db(mix_data[2*channel],
+                                         mix_data[2*channel+1]))
+        return {'input': inp_db, 'daw': daw_db, 'mix': mix_db}
