@@ -59,12 +59,10 @@ def _mixer_gain_to_hex(gain):
         gain = -128
     elif gain > 6:
         gain = 6
-    value = int(math.floor(gain+.5))
-    if value >= 0:
-        return [0x00, 0x00 + value]
-    else:
-        return [0x00, (0x100 + value)]
-
+    # A 1dB step in gain equals a step of 256 in the integer representation.
+    # Pack integer as signed short, unpack as two signed bytes (lsb, msb).
+    byte_seq = list(struct.unpack('2b', struct.pack('1h', round(gain*256.0))))
+    return byte_seq
 
 def _postroute_gain_to_hex(gain):
     """Calculate little endian byte sequence for post-router gain.
@@ -82,8 +80,7 @@ def _postroute_gain_to_hex(gain):
     if gain > 0:
         gain = 0
     # A 1dB step in gain equals a step of 256 in the integer representation.
-    # Pack the resulting integer into a 16-bit signed struct and unpack as a
-    # tuple of two signed bytes. The tuple order is little endian.
+    # Pack integer as signed short, unpack as two signed bytes (lsb, msb).
     byte_seq = list(struct.unpack('2b', struct.pack('1h', round(gain*256.0))))
     return byte_seq
 
