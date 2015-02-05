@@ -220,7 +220,7 @@ class ScarlettDevice(object):
 
     def get_name(self):
         """Get the name and serial number of the Scarlett device."""
-        get_device_name(self.device)
+        return get_device_name(self.device)
 
     # -------------------------------------------------------------------------
     # USB control transfers
