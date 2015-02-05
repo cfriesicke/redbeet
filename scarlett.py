@@ -1,26 +1,16 @@
 """A module to control USB devices of the Focusrite Scarlett series.
 
-This module contains the ScarlettDevice class with which Focusrite Scarlett
-devices can be controlled. Some further constants and helper fuctions are
-provided outside of the class within the module.
+This module contains the ScarlettDevice class and further helper functions with
+which Focusrite Scarlett devices can be controlled. The class supports the 6i6,
+8i6, 18i6, 18i8, and 18i20 devices. The 2i2 and 2i4 devices are not supported;
+they are controlled only by knobs on the front panel.
 
 Copyright (C) 2015 Christian Friesicke <christian@friesicke.me>
 
 Based on proof-of-concept code [https://github.com/x42/scarlettmixer]
 Copyright (C) 2013 Robin Gareus <robin@gareus.org>
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along
-with this program; if not, see <http://www.gnu.org/licenses/>.
+License: GPL3 [http://www.gnu.org/licenses/gpl.html]
 """
 
 import json
@@ -146,6 +136,7 @@ def get_device_name(device):
         A string consisting of manufacturer name (Focusrite), product name,
         and the serial number of the device. Because of the serial number, the
         returned string can be used as a unique identifier of the device.
+
     """
     mfr = usb.util.get_string(device, device.iManufacturer)
     prod = usb.util.get_string(device, device.iProduct)
@@ -342,6 +333,7 @@ class ScarlettDevice(object):
         Raises:
             KeyError: An error occured when trying to set the pad of an invalid
                 hardware input.
+
         """
         if channel not in self.config["pad_switch"]:
             raise KeyError('Invalid input source for pad switch')
