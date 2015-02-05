@@ -85,7 +85,7 @@ def _postroute_gain_to_hex(gain):
     return byte_seq
 
 
-def _twobyte_to_db(byte_lo, byte_hi):
+def _twobyte_to_db(lsb, msb):
     """Calculate peak level in dB from a two-byte sequence.
 
     Args:
@@ -95,8 +95,8 @@ def _twobyte_to_db(byte_lo, byte_hi):
         Peak level in dB; range is [-inf: 0].
 
     """
-    # pack two little endian bytes into struct; unpack as 16-bit int.
-    two_int8_bytes = struct.pack('2B', byte_lo&0xff, byte_hi&0xff)
+    # Pack two bytes (little endian) into struct; unpack as 16-bit int.
+    two_int8_bytes = struct.pack('2B', lsb & 0xff, msb & 0xff)
     int16_value = list(struct.unpack('1H', two_int8_bytes))[0]
     if int16_value == 0:
         return float('-inf')  # otherwise log10 would raise an exception
