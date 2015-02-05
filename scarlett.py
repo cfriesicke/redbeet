@@ -20,11 +20,8 @@ import usb.core
 import usb.util
 
 
-# constants for auto-detection / identifying interfaces by usb product id
-# TODO: delete 2i2 and 2i4?
+# constants for auto-detecting interfaces by usb product id
 ID_AUTO = 0
-ID_2I2 = 0x8006
-ID_2I4 = 0x800a
 ID_6I6 = 0x8012
 ID_8I6 = 0x8002
 ID_18I6 = 0x8000
@@ -115,11 +112,10 @@ def get_device_list():
 
     Returns:
         List of pyusb device objects of all connected Scarlett devices.
-        TODO: delete 2i2 and 2i4?
+
     """
     device_list = list()
-    for id_prod in [ID_2I2, ID_2I4, ID_6I6, ID_8I6, ID_18I6, ID_18I8,
-                    ID_18I20]:
+    for id_prod in [ID_6I6, ID_8I6, ID_18I6, ID_18I8, ID_18I20]:
         for device in usb.core.find(find_all=True, idVendor=0x1235,
                                     idProduct=id_prod):
             device_list.append(device)
@@ -199,16 +195,13 @@ class ScarlettDevice(object):
         # dictionary with pointers to json files that contain device-specific
         # configuration data
         # TODO: later files should be in /usr/share/package-foo/mapping/
-        # TODO: delete 2i2, 2i4?
         # TODO: create 18i20 json file
         json_file_by_id = {
-            ID_2I2:   "mapping/scarlett_2i2_mapping_TODO.json",
-            ID_2I4:   "mapping/scarlett_2i4_mapping_TODO.json",
-            ID_18I6:  "mapping/scarlett_18i6_mapping.json",
-            ID_8I6:   "mapping/scarlett_8i6_mapping.json",
-            ID_18I20: "mapping/scarlett_18i20_mapping_TODO.json",
             ID_6I6:   "mapping/scarlett_6i6_mapping.json",
-            ID_18I8:  "mapping/scarlett_18i8_mapping.json"
+            ID_8I6:   "mapping/scarlett_8i6_mapping.json",
+            ID_18I6:  "mapping/scarlett_18i6_mapping.json",
+            ID_18I8:  "mapping/scarlett_18i8_mapping.json",
+            ID_18I20: "mapping/scarlett_18i20_mapping_TODO.json"
         }
         # load json into dictionary with device configuration
         self.config = json.load(open(json_file_by_id[self.device.idProduct]))
