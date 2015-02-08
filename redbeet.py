@@ -21,7 +21,7 @@ class RedBeetWindow(Gtk.Window):
         self.set_titlebar(self.hb)
 
         # instance variables
-        self.device = scarlett.Device()
+        self.device = scarlett.ScarlettDevice()
         self.notebook = Gtk.Notebook()
 
         # router notebook
