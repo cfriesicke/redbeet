@@ -170,10 +170,11 @@ class ScarlettDevice(object):
 
         # auto-detect (default: first found device)
         if self.device is None:
-            self.device = get_device_list()[0]
-            # auto-detect failed?
-            if self.device is None:
+            device_list = get_device_list()
+            if not device_list:  # empty list; auto-detect failed?
                 raise ValueError("No device found.")
+            else:
+                self.device = device_list[0]
 
         # before accessing the device, detach kernel drivers
         # store list of previously attached interfaces
