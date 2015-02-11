@@ -377,6 +377,26 @@ class ScarlettDevice(object):
         """Save configuration to device; restored after power-cycles."""
         self.usb_ctrl_send(0x03, 0x005a, 0x3c00, [0xa5])
 
+    def zero_settings():
+        """Disconnect all inputs and outputs; set all gains to 0 dB."""
+
+        # disconnect all matrix mixer inputs; set all matrix mixer elements to
+        # unity gain (0 dB).
+        for mixer_in in self.device.config["mixer_in"]:
+            self.set_mixer_source("OFF", mixer_in)
+            for mixer_out in self.device.config["mixer_out"]:
+                mixer_set_gain(mixer_in, mixer_out, 0)
+
+        # disconnect all router inputs
+        for dest in self.device.config["router_dest"]:
+            self.route_mix("OFF", dest)
+
+        # unmute and set all master buses to unity gain (0 dB)
+        for bus in self.device.config["signal_out"]:
+            self.set_postroute_mute(bus, UNMUTE)
+            self.set_postroute_gain(bus, 0)
+
+
     # ____ mixer stage ________________________________________________________
 
     def set_mixer_source(self, src, mix_in):
