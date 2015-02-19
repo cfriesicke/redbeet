@@ -85,7 +85,6 @@ class RedBeetWindow(Gtk.Window):
 
         self.add(self.notebook)
 
-
     def on_src_combo_changed(self, combo, dest):
         self.device.route_mix(combo.get_active_text(), dest)
 
@@ -176,7 +175,6 @@ class MonoMixerMonoStrip(Gtk.Frame):
         print "DEBUG: Set mixer matrix element in=%s, out=%s to value=%g dB" \
             % (self.mixer_in, self.mixer_out, value)
         return False  # False = further process signal (e.g., fader animation)
-
 
     def get_mixer_src(self):
         return self.mixer_src
