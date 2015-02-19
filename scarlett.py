@@ -64,6 +64,7 @@ def _mixer_gain_to_hex(gain):
     byte_seq = list(struct.unpack('2b', struct.pack('1h', round(gain*256.0))))
     return byte_seq
 
+
 def _postroute_gain_to_hex(gain):
     """Calculate little endian byte sequence for post-router gain.
 
@@ -377,7 +378,7 @@ class ScarlettDevice(object):
         """Save configuration to device; restored after power-cycles."""
         self.usb_ctrl_send(0x03, 0x005a, 0x3c00, [0xa5])
 
-    def zero_settings():
+    def zero_settings(self):
         """Disconnect all inputs and outputs; set all gains to 0 dB."""
 
         # disconnect all matrix mixer inputs; set all matrix mixer elements to
@@ -385,7 +386,7 @@ class ScarlettDevice(object):
         for mixer_in in self.device.config["mixer_in"]:
             self.set_mixer_source("OFF", mixer_in)
             for mixer_out in self.device.config["mixer_out"]:
-                mixer_set_gain(mixer_in, mixer_out, 0)
+                self.set_mixer_gain(mixer_in, mixer_out, 0)
 
         # disconnect all router inputs
         for dest in self.device.config["router_dest"]:
@@ -395,7 +396,6 @@ class ScarlettDevice(object):
         for bus in self.device.config["signal_out"]:
             self.set_postroute_mute(bus, UNMUTE)
             self.set_postroute_gain(bus, 0)
-
 
     # ____ mixer stage ________________________________________________________
 
